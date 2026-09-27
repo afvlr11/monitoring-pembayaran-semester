@@ -18,6 +18,7 @@ export default function StudentTable({ data }) {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingPage, setLoadingPage] = useState(false);
   const itemsPerPage = 5;
 
   // Membuka modal
@@ -55,25 +56,40 @@ export default function StudentTable({ data }) {
 
   // Hapus mahasiswa
   async function hapusMahasiswa() {
-  setLoadingDelete(true);
+    setLoadingDelete(true);
 
-  const res = await fetch(`/api/mahasiswa/${selectedId}`, {
-    method: "DELETE",
-  });
+    const res = await fetch(`/api/mahasiswa/${selectedId}`, {
+      method: "DELETE",
+    });
 
-  const result = await res.json();
+    const result = await res.json();
 
-  setLoadingDelete(false);
+    setLoadingDelete(false);
 
-  if (!res.ok) {
-    alert(result.message);
-    return;
+    if (!res.ok) {
+      alert(result.message);
+      return;
+    }
+
+    setShowDeleteModal(false);
+
+    window.location.reload();
   }
 
-  setShowDeleteModal(false);
+  // Pindah halaman pagination
+  function gantiHalaman(page) {
+    setLoadingPage(true);
 
-  window.location.reload();
-}
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    setTimeout(() => {
+      setCurrentPage(page);
+      setLoadingPage(false);
+    }, 500);
+  }
 
   // Search
   const filteredData = data.filter((item) => {
@@ -91,15 +107,22 @@ export default function StudentTable({ data }) {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
 
-  const currentData = filteredData.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow overflow-hidden">
+      {/* Loading Pagination */}
+      {loadingPage && (
+        <div className="fixed inset-0 z-[100] bg-white/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
 
+            <p className="text-gray-600 font-medium">Memuat halaman...</p>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between p-5 border-b">
           <input
@@ -112,6 +135,7 @@ export default function StudentTable({ data }) {
             }}
             className="border rounded-lg px-4 py-2 w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
           <button
             onClick={() => router.push("/mahasiswa/tambah")}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full md:w-auto"
@@ -125,30 +149,21 @@ export default function StudentTable({ data }) {
           <table className="w-full">
             <thead className="bg-slate-800 text-white">
               <tr>
-                <th className="text-left p-4 w-[35%]">
-                  Mahasiswa
-                </th>
+                <th className="text-left p-4 w-[35%]">Mahasiswa</th>
 
-                <th className="text-left p-4 w-[35%]">
-                  Pembayaran
-                </th>
+                <th className="text-left p-4 w-[35%]">Pembayaran</th>
 
-                <th className="text-center p-4">
-                  Status
-                </th>
+                <th className="text-center p-4">Status</th>
 
-                <th className="text-center p-4">
-                  Aksi
-                </th>
+                <th className="text-center p-4">Aksi</th>
               </tr>
             </thead>
+
             <tbody>
-
               {currentData.map((item) => {
-
                 const sisa = Math.max(
                   0,
-                  item.biaya_semester - item.total_bayar
+                  item.biaya_semester - item.total_bayar,
                 );
 
                 return (
@@ -156,16 +171,11 @@ export default function StudentTable({ data }) {
                     key={item.id}
                     className="border-b hover:bg-slate-50 align-top"
                   >
-
                     {/* Mahasiswa */}
                     <td className="p-5">
-                      <p className="font-bold text-lg">
-                        👤 {item.nama}
-                      </p>
+                      <p className="font-bold text-lg">👤 {item.nama}</p>
 
-                      <p className="text-gray-600">
-                        {item.nim}
-                      </p>
+                      <p className="text-gray-600">{item.nim}</p>
 
                       <p className="text-sm text-gray-500 mt-1">
                         {item.prodi} • {item.angkatan}
@@ -176,31 +186,23 @@ export default function StudentTable({ data }) {
                     <td className="p-5">
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">
-                            Semester
-                          </span>
+                          <span className="text-gray-500">Semester</span>
 
                           <span className="font-semibold">
-                            Rp{" "}
-                            {item.biaya_semester.toLocaleString("id-ID")}
+                            Rp {item.biaya_semester.toLocaleString("id-ID")}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
-                          <span className="text-green-600">
-                            Dibayar
-                          </span>
+                          <span className="text-green-600">Dibayar</span>
 
                           <span className="font-semibold text-green-600">
-                            Rp{" "}
-                            {item.total_bayar.toLocaleString("id-ID")}
+                            Rp {item.total_bayar.toLocaleString("id-ID")}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
-                          <span className="text-red-500">
-                            Sisa
-                          </span>
+                          <span className="text-red-500">Sisa</span>
 
                           <span className="font-semibold text-red-500">
                             Rp {sisa.toLocaleString("id-ID")}
@@ -229,7 +231,7 @@ export default function StudentTable({ data }) {
 
                         <button
                           onClick={() => {
-                            setSelectedId(data.id);
+                            setSelectedId(item.id);
                             setShowDeleteModal(true);
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-28"
@@ -247,170 +249,152 @@ export default function StudentTable({ data }) {
 
         {/* Mobile Card */}
         <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-            {currentData.map((item) => {
+          {currentData.map((item) => {
+            const sisa = Math.max(0, item.biaya_semester - item.total_bayar);
 
-              const sisa = Math.max(
-                0,
-                item.biaya_semester - item.total_bayar
-              );
+            return (
+              <div
+                key={item.id}
+                className="bg-white rounded-xl shadow border p-4"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-lg">👤 {item.nama}</h3>
 
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl shadow border p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg">
-                        👤 {item.nama}
-                      </h3>
+                    <p className="text-gray-500 text-sm">{item.nim}</p>
 
-                      <p className="text-gray-500 text-sm">
-                        {item.nim}
-                      </p>
-
-                      <p className="text-gray-500 text-sm">
-                        {item.prodi} • {item.angkatan}
-                      </p>
-                    </div>
-
-                    <StatusBadge
-                      totalBayar={item.total_bayar}
-                      biayaSemester={item.biaya_semester}
-                    />
+                    <p className="text-gray-500 text-sm">
+                      {item.prodi} • {item.angkatan}
+                    </p>
                   </div>
 
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
+                  <StatusBadge
+                    totalBayar={item.total_bayar}
+                    biayaSemester={item.biaya_semester}
+                  />
+                </div>
 
-                      <span className="text-gray-500">
-                        Biaya Semester
-                      </span>
+                <div className="mt-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Biaya Semester</span>
 
-                      <span className="font-semibold">
-                        Rp{" "}
-                        {item.biaya_semester.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-green-600">
-                        Dibayar
-                      </span>
-
-                      <span className="font-semibold text-green-600">
-                        Rp{" "}
-                        {item.total_bayar.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-red-500">
-                        Sisa
-                      </span>
-
-                      <span className="font-semibold text-red-500">
-                        Rp{" "}
-                        {sisa.toLocaleString("id-ID")}
-                      </span>
-                    </div>
+                    <span className="font-semibold">
+                      Rp {item.biaya_semester.toLocaleString("id-ID")}
+                    </span>
                   </div>
 
-                  <div className="flex gap-2 mt-5">
-                    <button
-                      onClick={() => bukaModal(item)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
-                    >
-                      💳 Bayar
-                    </button>
+                  <div className="flex justify-between">
+                    <span className="text-green-600">Dibayar</span>
 
-                    <button
-                      onClick={() => hapusMahasiswa(item.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg"
-                    >
-                      🗑 Hapus
-                    </button>
+                    <span className="font-semibold text-green-600">
+                      Rp {item.total_bayar.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-red-500">Sisa</span>
+
+                    <span className="font-semibold text-red-500">
+                      Rp {sisa.toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
 
-            {filteredData.length === 0 && (
+                <div className="flex gap-2 mt-5">
+                  <button
+                    onClick={() => bukaModal(item)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+                  >
+                    💳 Bayar
+                  </button>
 
-              <div className="text-center py-10 text-gray-500">
-                Data mahasiswa tidak ditemukan.
+                  <button
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      setShowDeleteModal(true);
+                    }}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg"
+                  >
+                    🗑 Hapus
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
 
-          {/* Pagination */}
-
-          {filteredData.length > 0 && (
-
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-t">
-
-              <button
-                disabled={currentPage === 1}
-                onClick={() =>
-                  setCurrentPage(currentPage - 1)
-                }
-                className="w-full md:w-auto px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-              >
-                ← Sebelumnya
-              </button>
-
-              <span className="font-semibold">
-                Halaman {currentPage} dari {totalPages}
-              </span>
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() =>
-                  setCurrentPage(currentPage + 1)
-                }
-                className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
-                Berikutnya →
-              </button>
+          {filteredData.length === 0 && (
+            <div className="text-center py-10 text-gray-500">
+              Data mahasiswa tidak ditemukan.
             </div>
           )}
+        </div>
+
+        {/* Pagination */}
+        {filteredData.length > 0 && (
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-t">
+            <button
+              disabled={currentPage === 1 || loadingPage}
+              onClick={() => gantiHalaman(currentPage - 1)}
+              className="w-full md:w-auto px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+            >
+              ← Sebelumnya
+            </button>
+
+            <span className="font-semibold">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+
+            <button
+              disabled={currentPage === totalPages || loadingPage}
+              onClick={() => gantiHalaman(currentPage + 1)}
+              className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            >
+              Berikutnya →
+            </button>
           </div>
+        )}
+      </div>
 
-          <PaymentModal
-            open={openModal}
-            mahasiswa={selectedMahasiswa}
-            onClose={() => {
-              setOpenModal(false);
-              setSelectedMahasiswa(null);
-            }}
-            onSave={simpanPembayaran}/>
+      {/* Payment Modal */}
+      <PaymentModal
+        open={openModal}
+        mahasiswa={selectedMahasiswa}
+        onClose={() => {
+          setOpenModal(false);
+          setSelectedMahasiswa(null);
+        }}
+        onSave={simpanPembayaran}
+      />
 
-            {showDeleteModal && (
-              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-xl w-87.5 p-6">
-                  <h2 className="text-xl font-bold mb-2">
-                    Hapus Mahasiswa
-                  </h2>
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-87.5 p-6">
+            <h2 className="text-xl font-bold mb-2">Hapus Mahasiswa</h2>
 
-                  <p className="text-gray-600 mb-6">
-                    Yakin ingin menghapus data mahasiswa ini?
-                  </p>
+            <p className="text-gray-600 mb-6">
+              Yakin ingin menghapus data mahasiswa ini?
+            </p>
 
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowDeleteModal(false)}
-                      className="px-4 py-2 rounded-lg border">
-                      Batal
-                    </button>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-lg border"
+              >
+                Batal
+              </button>
 
-                    <button
-                      onClick={hapusMahasiswa}
-                      disabled={loadingDelete}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
-                      {loadingDelete ? "Menghapus..." : "Hapus"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-          );
-        }
+              <button
+                onClick={hapusMahasiswa}
+                disabled={loadingDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {loadingDelete ? "Menghapus..." : "Hapus"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
