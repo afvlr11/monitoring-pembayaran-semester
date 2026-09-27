@@ -2,12 +2,9 @@ import StudentTable from "@/components/StudentTable";
 import DashboardCards from "@/components/dashboardcard";
 
 async function getMahasiswa() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/mahasiswa`,
-    {
-      cache: "no-store",
-    }
-  );
+  const res = await fetch("https://website-mps.vercel.app/api/mahasiswa", {
+    cache: "no-store",
+  });
 
   if (!res.ok) {
     throw new Error("Gagal mengambil data mahasiswa");
@@ -27,9 +24,7 @@ export default async function MahasiswaPage() {
 
       <DashboardCards />
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        Data Mahasiswa
-      </h2>
+      <h2 className="text-2xl font-semibold mt-8 mb-4">Data Mahasiswa</h2>
 
       <StudentTable data={mahasiswa} />
     </div>
