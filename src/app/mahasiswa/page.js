@@ -2,7 +2,7 @@ import StudentTable from "@/components/StudentTable";
 import DashboardCards from "@/components/dashboardcard";
 
 async function getMahasiswa() {
-  const res = await fetch("https://website-mps.vercel.app/api/mahasiswa", {
+  const res = await fetch(`${process.env.APP_URL}/api/mahasiswa`, {
     cache: "no-store",
   });
 
@@ -12,7 +12,6 @@ async function getMahasiswa() {
 
   return res.json();
 }
-
 export default async function MahasiswaPage() {
   const mahasiswa = await getMahasiswa();
 
